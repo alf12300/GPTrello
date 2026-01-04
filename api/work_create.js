@@ -1,5 +1,35 @@
 import { json, requireApiKey, trello } from "./_lib.js";
 
+function autoTemplateFromTitle(title = "") {
+  const t = title.toLowerCase();
+
+  if (/(trip|travel|flight|hotel|onsite|on-site|visit)/.test(t)) return "business_trip";
+  if (/(trade show|exhibition|expo|booth)/.test(t)) return "trade_show";
+  if (/(meeting|call|demo|workshop)/.test(t) && /(internal|team|ops|finance)/.test(t)) return "meeting_internal";
+  if (/(meeting|call|demo|workshop)/.test(t)) return "meeting_customer";
+
+  if (/(renewal|extend|extension)/.test(t)) return "renewal";
+  if (/(negotiate|negotiation|counteroffer)/.test(t)) return "negotiation";
+  if (/(quote|quotation|pricing|price)/.test(t)) return "quote_standard";
+
+  if (/(rma|return|refund|replace|replacement)/.test(t)) return "rma_return";
+  if (/(escalation|urgent|critical)/.test(t)) return "escalation";
+  if (/(ticket|issue|problem|bug|failure)/.test(t)) return "after_sales_ticket";
+
+  if (/(compliance|certificate|coc|msds|rohs|reach)/.test(t)) return "compliance_docs";
+  if (/(document|docs|datasheet|spec|information)/.test(t)) return "info_to_send";
+
+  if (/(rollout|implementation|onboarding|go-live|deploy)/.test(t)) return "project_rollout";
+
+  if (/(shipment|shipping|awb|tracking|delivery)/.test(t)) return "shipment_followup";
+  if (/(payment|invoice|past due|overdue|collection)/.test(t)) return "payment_collection";
+
+  if (/(follow up|follow-up)/.test(t)) return "follow_up";
+
+  return "task_internal";
+}
+
+
 const SYNONYMS = {
   "us": "United States",
   "usa": "United States",
