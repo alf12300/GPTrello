@@ -1,5 +1,8 @@
 import { json, requireApiKey, trello } from "./_lib.js";
 
+/* -------------------------
+   AUTO TEMPLATE SELECTION
+-------------------------- */
 function autoTemplateFromTitle(title = "") {
   const t = title.toLowerCase();
 
@@ -29,18 +32,26 @@ function autoTemplateFromTitle(title = "") {
   return "task_internal";
 }
 
-
+/* -------------------------
+   COUNTRY NORMALIZATION
+-------------------------- */
 const SYNONYMS = {
-  "us": "United States",
-  "usa": "United States",
+  us: "United States",
+  usa: "United States",
   "u.s.": "United States",
   "united states of america": "United States",
-  "brasil": "Brazil"
+  brasil: "Brazil"
 };
 
-// Checklist templates (edit freely)
+function canonicalizeCountry(country) {
+  const raw = (country || "").trim();
+  return SYNONYMS[raw.toLowerCase()] || raw;
+}
+
+/* -------------------------
+   CHECKLIST TEMPLATES
+-------------------------- */
 const CHECKLIST_TEMPLATES = {
-  // SALES / COMMERCIAL
   quote_standard: [
     "Confirm requirements (SKU, qty, Incoterms, delivery date)",
     "Validate pricing tier / discounts",
@@ -51,269 +62,207 @@ const CHECKLIST_TEMPLATES = {
     "Set follow-up date"
   ],
   renewal: [
-    "Confirm renewal scope (products/services, term, start date)",
-    "Review usage/performance + value delivered",
-    "Check current pricing and renewal uplift guidelines",
-    "Identify risks (competition, budget, satisfaction)",
-    "Prepare renewal offer and terms",
-    "Send renewal proposal + confirm receipt",
-    "Schedule renewal call and next follow-up"
+    "Confirm renewal scope and dates",
+    "Review value delivered and usage",
+    "Check pricing and uplift rules",
+    "Identify renewal risks",
+    "Prepare renewal proposal",
+    "Send proposal and confirm receipt",
+    "Schedule renewal follow-up"
   ],
   negotiation: [
-    "Clarify decision criteria and stakeholders",
-    "Confirm current offer and walk-away points",
-    "Prepare concessions strategy (give/get)",
-    "Align internally before customer call",
-    "Run negotiation meeting and capture commitments",
-    "Send recap email with agreed next steps",
-    "Update forecast and follow-up date"
+    "Clarify decision criteria",
+    "Prepare concessions strategy",
+    "Align internally",
+    "Run negotiation call",
+    "Confirm commitments",
+    "Send recap email",
+    "Update forecast"
   ],
-  lead_qualification: [
-    "Confirm need/problem statement",
-    "Identify stakeholders and decision process",
-    "Confirm budget range and timing",
-    "Validate technical/operational fit",
-    "Agree next step (demo/quote/visit)",
-    "Send recap + required info request",
-    "Set follow-up date"
-  ],
-
-  // AFTER-SALES / SUPPORT
   after_sales_ticket: [
-    "Acknowledge receipt + confirm SLA",
-    "Collect evidence (photos/logs/serial)",
-    "Reproduce issue internally",
-    "Decide action (replace/repair/remote)",
-    "Update customer with plan + timeline",
-    "Close loop + confirm satisfaction"
+    "Acknowledge ticket and SLA",
+    "Collect evidence",
+    "Reproduce issue",
+    "Define solution",
+    "Update customer",
+    "Confirm resolution"
   ],
   rma_return: [
-    "Confirm product details (serial/lot) and issue summary",
-    "Validate warranty/return eligibility",
-    "Issue RMA number + return instructions",
-    "Arrange pickup/shipping label (if applicable)",
-    "Notify warehouse/service team and expected arrival",
-    "Track receipt and diagnostics",
-    "Communicate outcome (repair/replace/credit) and close"
-  ],
-  escalation: [
-    "Acknowledge escalation and owner assigned",
-    "Collect all context (timeline, evidence, impact)",
-    "Define immediate containment action",
-    "Engage internal teams (engineering/ops/QA)",
-    "Provide customer update with ETA",
-    "Confirm resolution and prevention actions",
-    "Document final summary and close"
-  ],
-
-  // INFORMATION / DOCUMENTS
-  info_to_send: [
-    "Gather requested documents",
-    "Verify latest version",
-    "Draft email response",
-    "Attach/link documents",
-    "Send + request confirmation"
+    "Validate return eligibility",
+    "Issue RMA",
+    "Arrange shipment",
+    "Track diagnostics",
+    "Confirm outcome",
+    "Close case"
   ],
   compliance_docs: [
-    "Confirm required document list and destination requirements",
-    "Collect latest certificates (CoC, MSDS, RoHS/REACH, etc.)",
-    "Verify validity dates and version control",
-    "Package documents in a single shareable link/folder",
-    "Send to customer + confirm acceptance",
-    "Log what was sent and where stored"
+    "Confirm required documents",
+    "Collect certificates",
+    "Verify versions",
+    "Send documents",
+    "Confirm acceptance"
   ],
-
-  // PROJECTS / IMPLEMENTATION
   project_rollout: [
-    "Define scope + success criteria",
-    "Stakeholders + communication channel",
-    "Timeline + milestones",
-    "Dependencies / risks",
-    "Kickoff scheduled",
-    "Weekly update cadence"
+    "Define scope",
+    "Assign stakeholders",
+    "Define timeline",
+    "Assess risks",
+    "Kickoff meeting",
+    "Weekly updates"
   ],
-  onboarding: [
-    "Confirm onboarding goals and success metrics",
-    "Collect required inputs (access, data, contacts)",
-    "Schedule kickoff and training sessions",
-    "Deliver setup/configuration steps",
-    "Validate first successful outcome",
-    "Provide customer documentation and support path",
-    "Schedule 30-day check-in"
-  ],
-
-  // MEETINGS (internal or customer)
   meeting_customer: [
-    "Confirm meeting objective and desired outcome",
-    "Confirm attendees and roles (customer + internal)",
-    "Prepare agenda and timeboxes",
-    "Collect latest context (open items, last email, quote, ticket)",
-    "Bring required materials (pricing, slides, docs)",
-    "Run meeting and capture decisions + action items",
-    "Send recap email with owners + deadlines"
+    "Confirm objective",
+    "Prepare agenda",
+    "Review context",
+    "Run meeting",
+    "Capture actions",
+    "Send recap"
   ],
   meeting_internal: [
-    "Define decision needed and success criteria",
-    "Invite required stakeholders",
-    "Prepare agenda + pre-read",
-    "Gather key data (pipeline, issues, blockers)",
-    "Run meeting and capture actions",
-    "Publish notes and assign owners",
-    "Schedule follow-up if needed"
+    "Define decision",
+    "Invite stakeholders",
+    "Prepare pre-read",
+    "Run meeting",
+    "Assign actions"
   ],
-
-  // TRAVEL / TRIPS / ONSITE
   business_trip: [
-    "Confirm trip purpose and success outcomes",
-    "Lock meetings/agenda (who/where/when)",
-    "Book travel (flight/train) and lodging",
-    "Prepare travel logistics (transfers, local contact, visas if needed)",
-    "Prepare customer materials (samples, docs, deck)",
-    "During trip: capture notes and action items after each meeting",
-    "After trip: send recaps, update Trello, and schedule follow-ups"
-  ],
-  onsite_visit: [
-    "Confirm onsite objectives and scope",
-    "Confirm site access requirements and safety rules",
-    "Schedule onsite agenda and attendees",
-    "Prepare materials/tools (samples, PPE, docs, laptop access)",
-    "Conduct onsite visit and document findings",
-    "Agree corrective actions / next steps on-site",
-    "Send visit report + owners + deadlines"
+    "Confirm trip objectives",
+    "Schedule meetings",
+    "Book travel",
+    "Prepare materials",
+    "Capture notes",
+    "Post-trip follow-ups"
   ],
   trade_show: [
-    "Confirm event goals (leads, meetings, partners)",
-    "Register badges and book travel/hotel",
-    "Prepare booth materials (collateral, demos, samples)",
-    "Pre-schedule key meetings and outreach",
-    "During event: capture leads with notes and next step",
-    "Post-event: follow up within 48 hours",
-    "Qualify leads and create opportunities/tasks"
+    "Define event goals",
+    "Register and book travel",
+    "Prepare materials",
+    "Capture leads",
+    "Post-event follow-up"
   ],
-
-  // OPERATIONS / LOGISTICS (useful for international sales)
   shipment_followup: [
-    "Confirm PO/order details and promised ship date",
-    "Check production/stock status",
-    "Confirm shipping method and Incoterms",
-    "Request tracking / AWB / BOL",
-    "Inform customer with tracking and ETA",
-    "Monitor delivery and exceptions",
-    "Confirm receipt and close loop"
+    "Confirm shipment details",
+    "Request tracking",
+    "Notify customer",
+    "Monitor delivery",
+    "Confirm receipt"
   ],
   payment_collection: [
-    "Confirm invoice number, amount, and due date",
-    "Check if PO/receiving is blocking payment",
-    "Send polite payment reminder with payment details",
-    "Escalate internally if past due threshold reached",
-    "Agree payment date/plan with customer",
-    "Confirm payment received",
-    "Update account status and close"
+    "Confirm invoice details",
+    "Send reminder",
+    "Resolve blockers",
+    "Confirm payment",
+    "Close loop"
   ],
-
-  // ADMIN / MISC
   follow_up: [
-    "Review last interaction and open questions",
-    "Draft follow-up message with clear ask",
-    "Send follow-up and confirm delivery/receipt",
-    "Set next follow-up date",
-    "Update card with outcome"
+    "Review last contact",
+    "Send follow-up",
+    "Schedule next step"
   ],
   task_internal: [
-    "Clarify objective and definition of done",
-    "Identify dependencies/inputs needed",
-    "Estimate effort and target date",
-    "Execute task",
-    "Document result/decision",
-    "Notify relevant stakeholders",
-    "Close or schedule next step"
+    "Clarify task",
+    "Execute work",
+    "Document result",
+    "Notify stakeholders"
   ]
 };
 
-
-function canonicalizeCountry(country) {
-  const raw = (country || "").trim();
-  const key = raw.toLowerCase();
-  return SYNONYMS[key] || raw;
-}
-
+/* -------------------------
+   HANDLER
+-------------------------- */
 export default async function handler(req, res) {
   const auth = requireApiKey(req);
   if (!auth.ok) return json(res, auth.status, auth);
 
-  if (req.method !== "POST") return json(res, 405, { error: "METHOD_NOT_ALLOWED" });
+  if (req.method === "OPTIONS") {
+    res.statusCode = 204;
+    return res.end();
+  }
+
+  if (req.method !== "POST") {
+    return json(res, 405, { error: "METHOD_NOT_ALLOWED" });
+  }
 
   const boardId = process.env.TRELLO_BOARD_ID;
-  if (!boardId) return json(res, 500, { error: "SERVER_MISCONFIGURED", message: "Missing TRELLO_BOARD_ID" });
+  if (!boardId) {
+    return json(res, 500, { error: "SERVER_MISCONFIGURED", message: "Missing TRELLO_BOARD_ID" });
+  }
 
-  let payload = "";
-  req.on("data", chunk => (payload += chunk));
-  req.on("end", async () => {
-    try {
-      const input = payload ? JSON.parse(payload) : {};
-      const country = canonicalizeCountry(input.country);
-      const title = (input.title || "").trim();
-      const description = (input.description || "").trim();
-      const due = input.due || null;
-      const checklistTemplate = input.checklistTemplate || autoTemplateFromTitle(title) || null;
+  // Read JSON body safely
+  let input;
+  try {
+    const raw = await new Promise((resolve, reject) => {
+      let data = "";
+      req.on("data", chunk => (data += chunk));
+      req.on("end", () => resolve(data));
+      req.on("error", reject);
+    });
+    input = raw ? JSON.parse(raw) : {};
+  } catch {
+    return json(res, 400, { error: "BAD_JSON", message: "Invalid JSON body" });
+  }
 
-      if (!country) return json(res, 400, { error: "VALIDATION_ERROR", message: "country is required" });
-      if (!title) return json(res, 400, { error: "VALIDATION_ERROR", message: "title is required" });
+  try {
+    const country = canonicalizeCountry(input.country);
+    const title = (input.title || "").trim();
+    const description = (input.description || "").trim();
+    const due = input.due || null;
+    const checklistTemplate = input.checklistTemplate || autoTemplateFromTitle(title);
 
-      // Find list by name on the board
-      const lists = await trello(`/boards/${boardId}/lists`, { query: { fields: "name" } });
-      const match = lists.find(l => l.name.toLowerCase() === country.toLowerCase());
-      if (!match) {
-        const suggestions = lists.map(l => l.name);
-        return json(res, 400, { error: "COUNTRY_UNKNOWN", message: `No list named '${country}'`, suggestions });
-      }
+    if (!country) return json(res, 400, { error: "country is required" });
+    if (!title) return json(res, 400, { error: "title is required" });
 
-      // Create card
-      const card = await trello(`/cards`, {
-        method: "POST",
-        body: {
-          idList: match.id,
-          name: title,
-          desc: description,
-          due
-        }
+    const lists = await trello(`/boards/${boardId}/lists`, { query: { fields: "name" } });
+    const list = lists.find(l => l.name.toLowerCase() === country.toLowerCase());
+
+    if (!list) {
+      return json(res, 400, {
+        error: "COUNTRY_UNKNOWN",
+        suggestions: lists.map(l => l.name)
       });
-
-      // Optionally create checklist + items
-      let checklist = null;
-      if (checklistTemplate) {
-        const items = CHECKLIST_TEMPLATES[checklistTemplate];
-        if (!items) {
-          return json(res, 400, {
-            error: "TEMPLATE_UNKNOWN",
-            message: `Unknown checklistTemplate '${checklistTemplate}'`,
-            available: Object.keys(CHECKLIST_TEMPLATES)
-          });
-        }
-
-        checklist = await trello(`/cards/${card.id}/checklists`, {
-          method: "POST",
-          query: { name: "Sales Checklist" }
-        });
-
-        for (const item of items) {
-          await trello(`/checklists/${checklist.id}/checkItems`, {
-            method: "POST",
-            query: { name: item, pos: "bottom" }
-          });
-        }
-      }
-
-      json(res, 200, {
-        id: card.id,
-        name: card.name,
-        url: card.url,
-        country,
-        due: card.due,
-        checklist: checklist ? { id: checklist.id, name: checklist.name, template: checklistTemplate } : null
-      });
-    } catch (e) {
-      json(res, e.status || 500, { error: "UPSTREAM_ERROR", message: e.message, details: e.data || null });
     }
-  });
+
+    const card = await trello(`/cards`, {
+      method: "POST",
+      body: {
+        idList: list.id,
+        name: title,
+        desc: description,
+        due
+      }
+    });
+
+    let checklist = null;
+    const items = CHECKLIST_TEMPLATES[checklistTemplate];
+    if (items && items.length) {
+      checklist = await trello(`/cards/${card.id}/checklists`, {
+        method: "POST",
+        query: { name: "Checklist" }
+      });
+
+      for (const item of items) {
+        await trello(`/checklists/${checklist.id}/checkItems`, {
+          method: "POST",
+          query: { name: item }
+        });
+      }
+    }
+
+    return json(res, 200, {
+      id: card.id,
+      name: card.name,
+      url: card.url,
+      country,
+      due: card.due,
+      checklist: checklist
+        ? { id: checklist.id, name: checklist.name, template: checklistTemplate }
+        : null
+    });
+  } catch (e) {
+    return json(res, e.status || 500, {
+      error: "UPSTREAM_ERROR",
+      message: e.message,
+      details: e.data || null
+    });
+  }
 }
