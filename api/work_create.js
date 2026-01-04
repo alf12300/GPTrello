@@ -255,7 +255,7 @@ export default async function handler(req, res) {
       const title = (input.title || "").trim();
       const description = (input.description || "").trim();
       const due = input.due || null;
-      const checklistTemplate = input.checklistTemplate || null;
+      const checklistTemplate = input.checklistTemplate || autoTemplateFromTitle(title) || null;
 
       if (!country) return json(res, 400, { error: "VALIDATION_ERROR", message: "country is required" });
       if (!title) return json(res, 400, { error: "VALIDATION_ERROR", message: "title is required" });
